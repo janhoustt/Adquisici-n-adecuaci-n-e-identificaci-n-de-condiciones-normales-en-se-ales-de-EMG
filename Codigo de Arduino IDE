@@ -1,0 +1,38 @@
+// Definición de pines para el AD8232
+const int loPlus = 26;   // Leads Off Detect +
+const int loMinus = 25;  // Leads Off Detect -
+const int emgPin = 34;   // Pin de entrada analógica
+bool capturando = false;
+unsigned long lastSampleTime = 0;
+const unsigned long sampleInterval = 1000; // 1000 microsegundos -> fs = 1000Hz (EMG Bíceps)
+
+void setup() {
+  Serial.begin(115200); 
+  pinMode(loPlus, INPUT);
+  pinMode(loMinus, INPUT);
+}
+
+void loop() {
+  // Leer comandos del puerto serial
+  if (Serial.available() > 0) {
+    char comando = Serial.read();
+    if (comando == 'S') {
+      capturando = true;   // 'S' para comenzar captura de datos
+    } 
+    else if (comando == 'K') {
+      capturando = false;  // 'K' para detener captura de datos
+    }
+  }
+
+  if (capturando) {
+    if (micros() - lastSampleTime >= sampleInterval) {
+      lastSampleTime = micros();   // Adaptar el tiempo al intervalo de las muestras
+      
+      if ((digitalRead(loPlus) == 1) || (digitalRead(loMinus) == 1)) {
+        Serial.println(0);   // Datos igualados a cero en caso de que se desconecte un electrodo
+      } else {
+        Serial.println(analogRead(emgPin));   // Imprimir datos de EMG en puerto serial
+      }
+    }
+  }
+}
